@@ -1,0 +1,34 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.conf import settings
+
+from routing.tasks import process_incoming_message
+
+
+class WhatsAppWebhookView(APIView):
+    def get(self, request):
+        mode = request.GET.get("hub.mode")
+        token = request.GET.get("hub.verify_token")
+        challenge = request.GET.get("hub.challenge")
+
+        if mode == "subscribe" and token == settings.WHATSAPP_VERIFY_TOKEN:
+            return Response(int(challenge))
+        return Response(status=403)
+
+    def post(self, request):
+        try:
+            entry = request.data["entry"][0]
+            change = entry["changes"][0]["value"]
+
+            if "messages" not in change:
+                return Response(status=200)
+
+            message = change["messages"][0]
+            phone_number = message["from"]
+
+            process_incoming_message.delay(phone_number, message)
+
+        except (KeyError, IndexError) as exc:
+            print(f"[webhooks] Payload WhatsApp inattendu : {exc}")
+
+        return Response(status=200)
