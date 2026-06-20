@@ -26,7 +26,7 @@ def diagnose_plant(media_id: str, farmer) -> str:
         return "Je n'ai pas pu télécharger ton image. Réessaie de l'envoyer 📸"
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         image_file = genai.upload_file_from_bytes(image_bytes, mime_type="image/jpeg")
         prompt = DIAGNOSIS_PROMPT_TEMPLATE.format(crop=farmer.crop or "non précisée")
         response = model.generate_content([prompt, image_file])

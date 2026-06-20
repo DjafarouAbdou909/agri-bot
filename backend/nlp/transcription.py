@@ -25,7 +25,7 @@ def transcribe_audio(media_id: str) -> str | None:
         return None
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         audio_file = genai.upload_file_from_bytes(audio_bytes, mime_type="audio/ogg")
         response = model.generate_content([
             "Transcris cet audio en français. Renvoie uniquement le texte transcrit, sans commentaire.",
