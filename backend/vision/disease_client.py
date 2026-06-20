@@ -27,9 +27,11 @@ def diagnose_plant(media_id: str, farmer) -> str:
 
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
-        image_file = genai.upload_file_from_bytes(image_bytes, mime_type="image/jpeg")
         prompt = DIAGNOSIS_PROMPT_TEMPLATE.format(crop=farmer.crop or "non précisée")
-        response = model.generate_content([prompt, image_file])
+        response = model.generate_content([
+            prompt,
+            {"mime_type": "image/jpeg", "data": image_bytes},
+        ])
         return response.text.strip()
     except Exception as exc:
         print(f"[vision.disease_client] Échec diagnostic image : {exc}")
