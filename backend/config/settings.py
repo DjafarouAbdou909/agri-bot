@@ -137,3 +137,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 WHATSAPP_ACCESS_TOKEN = os.environ.get("WHATSAPP_ACCESS_TOKEN")
 WHATSAPP_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
+
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "send-daily-weather-alerts": {
+        "task": "weather.tasks.send_daily_weather_alerts",
+        "schedule": crontab(hour=6, minute=0),  # tous les jours à 6h
+    },
+}
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY")
+OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")
