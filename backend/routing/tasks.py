@@ -10,6 +10,14 @@ from farmers.services import get_or_create_farmer, log_interaction, try_update_c
 
 @shared_task
 def process_incoming_message(phone_number: str, message: dict):
+    farmer, created = get_or_create_farmer(phone_number)
+
+    if created:
+        welcome_text = build_welcome_message(farmer)
+        send_whatsapp_message(phone_number, welcome_text)
+        log_interaction(farmer, "text", welcome_text, raw_content="[bienvenue automatique]")
+
+
     farmer = get_or_create_farmer(phone_number)
     msg_type = get_message_type(message)
     raw_content = ""

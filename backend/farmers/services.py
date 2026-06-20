@@ -8,9 +8,12 @@ from .models import Farmer, Interaction
 KNOWN_CROPS = ["cacao", "maïs", "mais", "riz", "manioc", "igname"]
 
 
-def get_or_create_farmer(phone_number: str) -> Farmer:
-    farmer, _created = Farmer.objects.get_or_create(phone_number=phone_number)
-    return farmer
+def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
+    farmer, created = Farmer.objects.get_or_create(
+        phone_number=phone_number,
+        defaults={"region": DEFAULT_REGION},
+    )
+    return farmer, created
 
 
 def log_interaction(farmer: Farmer, message_type: str, response: str, raw_content: str = "") -> Interaction:
