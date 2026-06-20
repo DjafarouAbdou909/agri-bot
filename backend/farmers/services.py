@@ -6,9 +6,17 @@ pour ne jamais avoir d'accès direct au modèle depuis routing/tasks.py.
 from .models import Farmer, Interaction
 
 KNOWN_CROPS = ["cacao", "maïs", "mais", "riz", "manioc", "igname"]
+DEFAULT_REGION = "Abidjan"
 
 
 def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
+    """
+    Récupère un agriculteur existant ou en crée un nouveau si c'est
+    sa première interaction avec AGRI-BOT.
+
+    Retourne (farmer, created) - created=True si c'est sa toute première
+    interaction, ce qui déclenche le message de bienvenue avec météo.
+    """
     farmer, created = Farmer.objects.get_or_create(
         phone_number=phone_number,
         defaults={"region": DEFAULT_REGION},
