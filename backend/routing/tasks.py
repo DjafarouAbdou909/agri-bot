@@ -4,6 +4,7 @@ from .dispatcher import get_message_type
 from nlp.engine import generate_text_response
 from nlp.transcription import transcribe_audio
 from vision.disease_client import diagnose_plant
+from weather.welcome import build_welcome_message
 from messaging.whatsapp_client import send_whatsapp_message
 from farmers.services import get_or_create_farmer, log_interaction, try_update_crop_from_text
 
@@ -17,8 +18,6 @@ def process_incoming_message(phone_number: str, message: dict):
         send_whatsapp_message(phone_number, welcome_text)
         log_interaction(farmer, "text", welcome_text, raw_content="[bienvenue automatique]")
 
-
-    farmer = get_or_create_farmer(phone_number)
     msg_type = get_message_type(message)
     raw_content = ""
 
