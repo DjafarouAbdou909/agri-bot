@@ -6,7 +6,12 @@ from nlp.transcription import transcribe_audio
 from vision.disease_client import diagnose_plant
 from weather.welcome import build_welcome_message
 from messaging.whatsapp_client import send_whatsapp_message
-from farmers.services import get_or_create_farmer, log_interaction, try_update_crop_from_text
+from farmers.services import (
+    get_or_create_farmer,
+    log_interaction,
+    try_update_crop_from_text,
+    get_recent_conversation,
+)
 
 
 @shared_task
@@ -25,7 +30,8 @@ def process_incoming_message(phone_number: str, message: dict):
         user_text = message["text"]["body"]
         raw_content = user_text
         try_update_crop_from_text(farmer, user_text)
-        response = generate_text_response(user_text, farmer)
+        history = get_recent_conversation(farmer)
+        response = generate_text_response(user_text, farmer, conversation_history=history)
 
     elif msg_type == "audio":
         media_id = message["audio"]["id"]
@@ -35,7 +41,8 @@ def process_incoming_message(phone_number: str, message: dict):
         else:
             raw_content = user_text
             try_update_crop_from_text(farmer, user_text)
-            response = generate_text_response(user_text, farmer)
+            history = get_recent_conversation(farmer)
+            response = generate_text_response(user_text, farmer, conversation_history=history)
 
     elif msg_type == "image":
         media_id = message["image"]["id"]

@@ -29,8 +29,13 @@ SECRET_KEY = 'django-insecure-h*8q1rtvblzlvf-s04viuuphooza2-5e(u%=zb2batn0q!37qp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# settings.py
 
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'elin-phrenitic-unpersonally.ngrok-free.dev', # Add the domain from your ngrok output
+]
 
 # Application definition
 
@@ -41,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
     'core',
     'farmers',
     'messaging',
@@ -151,3 +157,6 @@ CELERY_BEAT_SCHEDULE = {
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY")
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")
+WHATSAPP_VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN")
+WHATSAPP_ACCESS_TOKEN = os.environ.get("WHATSAPP_ACCESS_TOKEN")
+WHATSAPP_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
