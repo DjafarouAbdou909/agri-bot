@@ -12,10 +12,13 @@ django-celery-beat==2.6.0
 # IA / LLM
 groq==0.9.0
 google-generativeai==0.7.2
+google-genai==1.2.0  # nouveau SDK unifié, requis pour le TTS (response_modalities) dans nlp/tts.py
+httpx==0.27.2  # pin nécessaire : groq==0.9.0 passe encore "proxies" à httpx, supprimé depuis httpx 0.28
 
 # HTTP / utils
 requests==2.32.3
 gunicorn==22.0.0
+whitenoise==6.7.0
 
 # Tests
 pytest==8.2.2

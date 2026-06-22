@@ -46,3 +46,29 @@ def try_update_crop_from_text(farmer: Farmer, user_text: str) -> bool:
             farmer.save(update_fields=["crop", "updated_at"])
             return True
     return False
+
+
+def get_recent_conversation(farmer: Farmer, limit: int = 5) -> list[dict]:
+    """
+    Récupère les derniers échanges (message reçu + réponse envoyée) d'un
+    agriculteur, pour donner du contexte au LLM (nlp.engine.generate_text_response).
+
+    Retourne une liste à plat au format attendu par l'API Groq/OpenAI :
+    [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}, ...]
+    ordonnée du plus ancien au plus récent, prête à être injectée directement
+    dans `messages` via `messages.extend(history)`.
+    """
+    interactions = (
+        Interaction.objects.filter(farmer=farmer)
+        .order_by("-created_at")[:limit]
+    )
+    interactions = list(interactions)
+    interactions.reverse()  # remettre dans l'ordre chronologique (plus ancien -> plus récent)
+
+    history: list[dict] = []
+    for interaction in interactions:
+        if interaction.raw_content:
+            history.append({"role": "user", "content": interaction.raw_content})
+        if interaction.response:
+            history.append({"role": "assistant", "content": interaction.response})
+    return history

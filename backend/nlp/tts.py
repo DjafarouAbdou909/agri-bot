@@ -3,33 +3,50 @@ Synthèse vocale (Text-to-Speech) via Gemini, pour répondre par message
 vocal aux agriculteurs qui envoient eux-mêmes des messages vocaux
 (important pour les agriculteurs illettrés qui ne peuvent pas lire
 les réponses texte).
+
+NOTE MIGRATION : ce module utilise le nouveau SDK unifié `google-genai`
+(package `google-genai`, import `from google import genai`), et non
+l'ancien `google-generativeai` (déprécié). C'est nécessaire car
+`response_modalities` / la génération audio TTS n'existe que dans le
+nouveau SDK - l'ancien `GenerationConfig` ne connaît pas ce champ et
+lève "Unknown field for GenerationConfig: response_modalities".
 """
 import base64
 import subprocess
 import tempfile
 import os
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 
-_configured = False
+_client = None
 
 
-def _ensure_configured():
-    global _configured
-    if not _configured:
-        genai.configure(api_key=settings.GOOGLE_AI_API_KEY)
-        _configured = True
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=settings.GOOGLE_AI_API_KEY)
+    return _client
 
 
 def generate_speech_mp3(text: str) -> bytes | None:
-    _ensure_configured()
-
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash-preview-tts")
-        response = model.generate_content(
-            text,
-            generation_config={"response_modalities": ["AUDIO"]},
+        client = _get_client()
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-tts",
+            contents=text,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name="Kore",
+                        )
+                    )
+                ),
+            ),
         )
 
         audio_part = response.candidates[0].content.parts[0].inline_data
