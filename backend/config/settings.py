@@ -24,17 +24,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h*8q1rtvblzlvf-s04viuuphooza2-5e(u%=zb2batn0q!37qp'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-h*8q1rtvblzlvf-s04viuuphooza2-5e(u%=zb2batn0q!37qp'  # fallback dev local uniquement
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # settings.py
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'elin-phrenitic-unpersonally.ngrok-free.dev', # Add the domain from your ngrok output
+    'elin-phrenitic-unpersonally.ngrok-free.dev',  # domaine ngrok pour le dev
+    '.onrender.com',  # couvre tous les sous-domaines Render (ex: agri-bot-75w7.onrender.com)
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
 ]
 
 # Application definition
@@ -46,7 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     'core',
     'farmers',
     'messaging',
@@ -59,6 +67,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # juste après SecurityMiddleware, pour servir les statics en prod
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -90,6 +99,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# NOTE: SQLite volontairement conservé pour le hackathon.
+# Attention : sur Render (plan Free, sans disque persistant), ce fichier
+# est réinitialisé à chaque redéploiement/restart. Acceptable pour une démo,
+# à revoir avant toute mise en production réelle (passer à PostgreSQL).
 
 DATABASES = {
     'default': {
@@ -134,6 +147,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -146,6 +161,11 @@ WHATSAPP_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
 
 
 from celery.schedules import crontab
+
+# Broker Celery : en local ça tombera sur redis://localhost:6379/0,
+# sur Render on définit CELERY_BROKER_URL = Internal Key Value (Redis/Valkey) URL.
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 
 CELERY_BEAT_SCHEDULE = {
     "send-daily-weather-alerts": {
