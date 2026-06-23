@@ -1,11 +1,14 @@
 FROM python:3.12-slim
 
-# ffmpeg est requis pour la conversion audio (synthèse vocale TTS)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
+WORKDIR /app
+
+# ffmpeg requis par nlp/tts.py pour convertir l'audio PCM (Gemini TTS) en MP3
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN python manage.py collectstatic --noinput
+EXPOSE 8000
+CMD python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
