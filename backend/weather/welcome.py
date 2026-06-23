@@ -1,6 +1,6 @@
 from .client import get_weather_for_region
 
-WELCOME_HEADER = "👋 Bienvenue sur AGRI-BOT !\n\n"
+WELCOME_HEADER = "Bienvenue sur AGRI-BOT !\n\n"
 
 
 def build_welcome_message(farmer) -> str:
@@ -22,7 +22,7 @@ def build_welcome_message(farmer) -> str:
 
     return (
         f"{WELCOME_HEADER}"
-        f"📍 Météo actuelle à {farmer.region} : {temp:.0f}°C, {description}\n"
+        f" Météo actuelle à {farmer.region} : {temp:.0f}°C, {description}\n"
         f"{advice}\n\n"
         f"Envoie-moi une question, un message vocal, ou une photo de plante "
         f"pour un diagnostic. Tu peux aussi me dire ta culture (ex: \"je cultive du cacao\") "

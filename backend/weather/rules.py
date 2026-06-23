@@ -13,19 +13,19 @@ def get_alert_message(weather_data: dict, crop: str) -> str | None:
 
     if rain_mm > RAIN_THRESHOLD_MM:
         return (
-            f"⚠️ Fortes pluies prévues. Risque accru de maladies fongiques "
+            f" Fortes pluies prévues. Risque accru de maladies fongiques "
             f"sur {crop}. Inspecte tes plants dans les prochains jours."
         )
 
     if temp > HEAT_THRESHOLD_C:
         return (
-            f"☀️ Forte chaleur prévue ({temp:.0f}°C). "
+            f" Forte chaleur prévue ({temp:.0f}°C). "
             f"Pense à irriguer ton champ de {crop} si possible."
         )
 
     if wind_speed > WIND_THRESHOLD_MS:
         return (
-            f"💨 Vents forts annoncés. "
+            f" Vents forts annoncés. "
             f"Protège les jeunes plants de {crop} si tu le peux."
         )
 

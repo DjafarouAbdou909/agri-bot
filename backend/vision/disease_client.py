@@ -19,11 +19,11 @@ def diagnose_plant(media_id: str, farmer) -> str:
 
     media_url = get_media_url(media_id)
     if not media_url:
-        return "Je n'ai pas pu récupérer ton image. Réessaie de l'envoyer 📸"
+        return "Je n'ai pas pu récupérer ton image. Réessaie de l'envoyer "
 
     image_bytes = download_media(media_url)
     if not image_bytes:
-        return "Je n'ai pas pu télécharger ton image. Réessaie de l'envoyer 📸"
+        return "Je n'ai pas pu télécharger ton image. Réessaie de l'envoyer "
 
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
@@ -35,4 +35,4 @@ def diagnose_plant(media_id: str, farmer) -> str:
         return response.text.strip()
     except Exception as exc:
         print(f"[vision.disease_client] Échec diagnostic image : {exc}")
-        return "Je n'ai pas pu analyser cette image. Essaie une photo plus nette, de près, sous bonne lumière 📸"
+        return "Je n'ai pas pu analyser cette image. Essaie une photo plus nette, de près, sous bonne lumière "
