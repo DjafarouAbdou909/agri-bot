@@ -3,13 +3,6 @@ Synthèse vocale (Text-to-Speech) via Gemini, pour répondre par message
 vocal aux agriculteurs qui envoient eux-mêmes des messages vocaux
 (important pour les agriculteurs illettrés qui ne peuvent pas lire
 les réponses texte).
-
-NOTE MIGRATION : ce module utilise le nouveau SDK unifié `google-genai`
-(package `google-genai`, import `from google import genai`), et non
-l'ancien `google-generativeai` (déprécié). C'est nécessaire car
-`response_modalities` / la génération audio TTS n'existe que dans le
-nouveau SDK - l'ancien `GenerationConfig` ne connaît pas ce champ et
-lève "Unknown field for GenerationConfig: response_modalities".
 """
 import base64
 import subprocess
