@@ -7,6 +7,7 @@ from nlp.tts import generate_speech_mp3
 from vision.disease_client import diagnose_plant
 from weather.welcome import build_welcome_message
 from messaging.whatsapp_client import send_whatsapp_message, send_whatsapp_audio
+from farmers.models import Interaction
 from farmers.services import (
     get_or_create_farmer,
     log_interaction,
@@ -17,6 +18,13 @@ from farmers.services import (
 
 @shared_task
 def process_incoming_message(phone_number: str, message: dict):
+    whatsapp_message_id = message.get("id", "")
+    if whatsapp_message_id and Interaction.objects.filter(
+        whatsapp_message_id=whatsapp_message_id
+    ).exists():
+        print(f"[routing.tasks] Message {whatsapp_message_id} déjà traité, on ignore.")
+        return
+
     farmer, created = get_or_create_farmer(phone_number)
 
     if created:
@@ -62,4 +70,8 @@ def process_incoming_message(phone_number: str, message: dict):
         response = "Je ne comprends pas ce type de message. Envoie un texte, une voix ou une photo de plante 🌱"
         send_whatsapp_message(phone_number, response)
 
-    log_interaction(farmer, msg_type, response, raw_content=raw_content)
+    log_interaction(
+        farmer, msg_type, response,
+        raw_content=raw_content,
+        whatsapp_message_id=whatsapp_message_id,
+    )

@@ -33,6 +33,7 @@ class Interaction(models.Model):
     message_type = models.CharField(max_length=15, choices=MESSAGE_TYPE_CHOICES)
     raw_content = models.TextField(blank=True, default="")
     response = models.TextField(blank=True, default="")
+    whatsapp_message_id = models.CharField(max_length=100, blank=True, default="", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

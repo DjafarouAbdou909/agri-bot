@@ -5,18 +5,17 @@ pour ne jamais avoir d'accès direct au modèle depuis routing/tasks.py.
 """
 from .models import Farmer, Interaction
 
-KNOWN_CROPS = ["cacao", "maïs", "mais", "riz", "manioc", "igname"]
+KNOWN_CROPS = [
+    "cacao", "maïs", "mais", "riz", "manioc", "igname",
+    "tomate", "piment", "banane", "plantain", "café", "anacarde",
+    "arachide", "coton", "hévéa", "palmier à huile", "ananas",
+    "gombo", "aubergine", "oignon", "patate douce",
+]
 DEFAULT_REGION = "Abidjan"
+CONVERSATION_HISTORY_LIMIT = 6
 
 
 def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
-    """
-    Récupère un agriculteur existant ou en crée un nouveau si c'est
-    sa première interaction avec AGRI-BOT.
-
-    Retourne (farmer, created) - created=True si c'est sa toute première
-    interaction, ce qui déclenche le message de bienvenue avec météo.
-    """
     farmer, created = Farmer.objects.get_or_create(
         phone_number=phone_number,
         defaults={"region": DEFAULT_REGION},
@@ -24,20 +23,39 @@ def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
     return farmer, created
 
 
-def log_interaction(farmer: Farmer, message_type: str, response: str, raw_content: str = "") -> Interaction:
+def log_interaction(
+    farmer: Farmer,
+    message_type: str,
+    response: str,
+    raw_content: str = "",
+    whatsapp_message_id: str = "",
+) -> Interaction:
     return Interaction.objects.create(
         farmer=farmer,
         message_type=message_type,
         raw_content=raw_content,
         response=response,
+        whatsapp_message_id=whatsapp_message_id,
     )
 
 
+def get_recent_conversation(farmer: Farmer, limit: int = CONVERSATION_HISTORY_LIMIT) -> list[dict]:
+    recent_interactions = (
+        Interaction.objects
+        .filter(farmer=farmer, message_type__in=["text", "audio"])
+        .exclude(raw_content="")
+        .order_by("-created_at")[:limit]
+    )
+
+    history = []
+    for interaction in reversed(list(recent_interactions)):
+        history.append({"role": "user", "content": interaction.raw_content})
+        history.append({"role": "assistant", "content": interaction.response})
+
+    return history
+
+
 def try_update_crop_from_text(farmer: Farmer, user_text: str) -> bool:
-    """
-    Détecte "ma culture est le cacao" / "je cultive du maïs" et met à jour
-    le profil. Retourne True si une culture a été détectée.
-    """
     text_lower = user_text.lower()
     for crop in KNOWN_CROPS:
         if crop in text_lower:
@@ -46,29 +64,3 @@ def try_update_crop_from_text(farmer: Farmer, user_text: str) -> bool:
             farmer.save(update_fields=["crop", "updated_at"])
             return True
     return False
-
-
-def get_recent_conversation(farmer: Farmer, limit: int = 5) -> list[dict]:
-    """
-    Récupère les derniers échanges (message reçu + réponse envoyée) d'un
-    agriculteur, pour donner du contexte au LLM (nlp.engine.generate_text_response).
-
-    Retourne une liste à plat au format attendu par l'API Groq/OpenAI :
-    [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}, ...]
-    ordonnée du plus ancien au plus récent, prête à être injectée directement
-    dans `messages` via `messages.extend(history)`.
-    """
-    interactions = (
-        Interaction.objects.filter(farmer=farmer)
-        .order_by("-created_at")[:limit]
-    )
-    interactions = list(interactions)
-    interactions.reverse()  # remettre dans l'ordre chronologique (plus ancien -> plus récent)
-
-    history: list[dict] = []
-    for interaction in interactions:
-        if interaction.raw_content:
-            history.append({"role": "user", "content": interaction.raw_content})
-        if interaction.response:
-            history.append({"role": "assistant", "content": interaction.response})
-    return history
