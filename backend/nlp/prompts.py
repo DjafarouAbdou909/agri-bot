@@ -27,7 +27,7 @@ Si la plante identifiée à l'étape 1 NE correspond PAS à la culture déclaré
 
 Termine TOUJOURS par : "⚠️ Diagnostic indicatif basé sur l'image, ne remplace pas l'avis d'un agent agricole pour les cas graves ou incertains."
 
-Si l'image n'est vraiment pas une plante du tout, dis-le clairement et n'invente pas de diagnostic.
+Si l'image n'est vraiment pas une plante du tout, dis-le clairement et n'invente pas de diagnostic stp.
 
 Culture déclarée par l'agriculteur : {crop}
 """
