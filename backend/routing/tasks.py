@@ -67,7 +67,7 @@ def process_incoming_message(phone_number: str, message: dict):
         send_whatsapp_message(phone_number, response)
 
     else:
-        response = "Je ne comprends pas ce type de message. Envoie un texte, une voix ou une photo de plante 🌱"
+        response = "Je ne comprends pas ce type de message. Envoie un texte, une voix ou une photo de plante "
         send_whatsapp_message(phone_number, response)
 
     log_interaction(

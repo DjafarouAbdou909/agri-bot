@@ -30,4 +30,4 @@ class WhatsAppWebhookView(APIView):
         except (KeyError, IndexError) as exc:
             print(f"[webhooks] Payload WhatsApp inattendu : {exc}", flush=True)
 
-        return Response(status=200)
+        return Response(status=200) 
