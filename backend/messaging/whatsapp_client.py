@@ -1,10 +1,3 @@
-"""
-Client pour interagir avec l'API WhatsApp Cloud (Meta).
-Responsabilités :
-- envoyer un message texte à un agriculteur
-- récupérer l'URL d'un média (audio/image) reçu
-- télécharger le contenu binaire d'un média
-"""
 import requests
 from django.conf import settings
 
@@ -20,11 +13,6 @@ def _headers() -> dict:
 
 
 def send_whatsapp_message(phone_number: str, text: str) -> bool:
-    """
-    Envoie un message texte à un agriculteur via WhatsApp Cloud API.
-    Retourne True si l'envoi a réussi, False sinon (jamais d'exception levée
-    ici : un échec d'envoi ne doit jamais faire planter le pipeline).
-    """
     url = f"{GRAPH_API_BASE}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
     payload = {
         "messaging_product": "whatsapp",
@@ -32,21 +20,54 @@ def send_whatsapp_message(phone_number: str, text: str) -> bool:
         "type": "text",
         "text": {"body": text},
     }
-
     try:
         response = requests.post(url, headers=_headers(), json=payload, timeout=10)
         response.raise_for_status()
         return True
     except requests.RequestException as exc:
-        print(f"[whatsapp_client] Échec d'envoi à {phone_number} : {exc}")
+        print(f"[whatsapp_client] Échec d'envoi texte à {phone_number} : {exc}")
+        return False
+
+
+def upload_audio_media(audio_bytes: bytes) -> str | None:
+    url = f"{GRAPH_API_BASE}/{settings.WHATSAPP_PHONE_NUMBER_ID}/media"
+    try:
+        response = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}"},
+            files={"file": ("response.mp3", audio_bytes, "audio/mpeg")},
+            data={"messaging_product": "whatsapp"},
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json().get("id")
+    except requests.RequestException as exc:
+        print(f"[whatsapp_client] Échec upload audio : {exc}")
+        return None
+
+
+def send_whatsapp_audio(phone_number: str, audio_bytes: bytes) -> bool:
+    media_id = upload_audio_media(audio_bytes)
+    if not media_id:
+        return False
+
+    url = f"{GRAPH_API_BASE}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": phone_number,
+        "type": "audio",
+        "audio": {"id": media_id},
+    }
+    try:
+        response = requests.post(url, headers=_headers(), json=payload, timeout=10)
+        response.raise_for_status()
+        return True
+    except requests.RequestException as exc:
+        print(f"[whatsapp_client] Échec d'envoi audio à {phone_number} : {exc}")
         return False
 
 
 def get_media_url(media_id: str) -> str | None:
-    """
-    Récupère l'URL temporaire de téléchargement d'un média (audio/image)
-    à partir de son media_id fourni dans le webhook entrant.
-    """
     url = f"{GRAPH_API_BASE}/{media_id}"
     try:
         response = requests.get(
@@ -62,11 +83,6 @@ def get_media_url(media_id: str) -> str | None:
 
 
 def download_media(media_url: str) -> bytes | None:
-    """
-    Télécharge le contenu binaire d'un média depuis l'URL temporaire Meta.
-    Nécessite le token d'accès même pour le téléchargement (URL signée mais
-    Meta exige aussi le header Authorization).
-    """
     try:
         response = requests.get(
             media_url,
