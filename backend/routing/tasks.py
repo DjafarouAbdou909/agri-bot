@@ -5,13 +5,14 @@ from nlp.engine import generate_text_response
 from nlp.transcription import transcribe_audio
 from nlp.tts import generate_speech_mp3
 from vision.disease_client import diagnose_plant
-from weather.welcome import build_welcome_message
+from weather.welcome import build_welcome_message, build_city_confirmation_message
 from messaging.whatsapp_client import send_whatsapp_message, send_whatsapp_audio
 from farmers.models import Interaction
 from farmers.services import (
     get_or_create_farmer,
     log_interaction,
     try_update_crop_from_text,
+    try_update_region_from_text,
     get_recent_conversation,
 )
 
@@ -34,11 +35,19 @@ def process_incoming_message(phone_number: str, message: dict):
 
     msg_type = get_message_type(message)
     raw_content = ""
+    had_region_before = bool(farmer.region)
 
     if msg_type == "text":
         user_text = message["text"]["body"]
         raw_content = user_text
         try_update_crop_from_text(farmer, user_text)
+        city_just_set = try_update_region_from_text(farmer, user_text)
+
+        if city_just_set and not had_region_before:
+            confirmation = build_city_confirmation_message(farmer)
+            send_whatsapp_message(phone_number, confirmation)
+            log_interaction(farmer, "text", confirmation, raw_content="[confirmation ville]")
+
         history = get_recent_conversation(farmer)
         response = generate_text_response(user_text, farmer, conversation_history=history)
         send_whatsapp_message(phone_number, response)
@@ -52,6 +61,13 @@ def process_incoming_message(phone_number: str, message: dict):
         else:
             raw_content = user_text
             try_update_crop_from_text(farmer, user_text)
+            city_just_set = try_update_region_from_text(farmer, user_text)
+
+            if city_just_set and not had_region_before:
+                confirmation = build_city_confirmation_message(farmer)
+                send_whatsapp_message(phone_number, confirmation)
+                log_interaction(farmer, "text", confirmation, raw_content="[confirmation ville]")
+
             history = get_recent_conversation(farmer)
             response = generate_text_response(user_text, farmer, conversation_history=history)
 
@@ -67,7 +83,7 @@ def process_incoming_message(phone_number: str, message: dict):
         send_whatsapp_message(phone_number, response)
 
     else:
-        response = "Je ne comprends pas ce type de message. Envoie un texte, une voix ou une photo de plante "
+        response = "Je ne comprends pas ce type de message. Envoie un texte, une voix ou une photo de plante 🌱"
         send_whatsapp_message(phone_number, response)
 
     log_interaction(
