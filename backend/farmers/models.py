@@ -41,3 +41,24 @@ class Interaction(models.Model):
 
     def __str__(self) -> str:
         return f"{self.farmer.phone_number} - {self.message_type} - {self.created_at:%Y-%m-%d %H:%M}"
+    
+
+class Interaction(models.Model):
+    MESSAGE_TYPE_CHOICES = [
+        ("text", "Texte"),
+        ("audio", "Audio"),
+        ("image", "Image"),
+        ("unsupported", "Non supporté"),
+    ]
+
+    farmer = models.ForeignKey(Farmer, on_delete=models.CASCADE, related_name="interactions")
+    message_type = models.CharField(max_length=15, choices=MESSAGE_TYPE_CHOICES)
+    raw_content = models.TextField(blank=True, default="")
+    response = models.TextField(blank=True, default="")
+    whatsapp_message_id = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    # URLs vers les médias stockés sur Cloudinary
+    media_url = models.URLField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]

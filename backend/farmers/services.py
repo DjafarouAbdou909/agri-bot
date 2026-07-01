@@ -41,13 +41,13 @@ def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
     farmer, created = Farmer.objects.get_or_create(phone_number=phone_number)
     return farmer, created
 
-
 def log_interaction(
     farmer: Farmer,
     message_type: str,
     response: str,
     raw_content: str = "",
     whatsapp_message_id: str = "",
+    media_url: str = "",
 ) -> Interaction:
     return Interaction.objects.create(
         farmer=farmer,
@@ -55,8 +55,8 @@ def log_interaction(
         raw_content=raw_content,
         response=response,
         whatsapp_message_id=whatsapp_message_id,
+        media_url=media_url,
     )
-
 
 def get_recent_conversation(farmer: Farmer, limit: int = CONVERSATION_HISTORY_LIMIT) -> list[dict]:
     recent_interactions = (
