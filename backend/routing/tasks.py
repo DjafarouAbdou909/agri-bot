@@ -7,8 +7,8 @@ from nlp.transcription import transcribe_audio
 from nlp.tts import generate_speech_mp3
 from vision.disease_client import diagnose_plant
 from weather.welcome import build_welcome_message, build_city_confirmation_message
+from messaging.whatsapp_client import download_media, get_media_url
 from messaging.whatsapp_client import send_whatsapp_message, send_whatsapp_audio
-from messaging.media_client import download_media, get_media_url  # adapte l'import selon où sont ces fonctions
 from farmers.models import Interaction
 from farmers.services import (
     get_or_create_farmer,
