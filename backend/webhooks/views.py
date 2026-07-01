@@ -14,13 +14,17 @@ class WhatsAppWebhookView(APIView):
 
     def post(self, request):
         try:
+            print(f"[webhook] Requête reçue : {request.data}", flush=True)
             entry = request.data["entry"][0]
             change = entry["changes"][0]["value"]
             if "messages" not in change:
+                print("[webhook] Pas de messages dans le payload", flush=True)
                 return Response(status=200)
             message = change["messages"][0]
             phone_number = message["from"]
-            process_incoming_message(phone_number, message)  # appel direct
+            print(f"[webhook] Message de {phone_number}", flush=True)
+            process_incoming_message(phone_number, message)
+            print("[webhook] Traitement terminé", flush=True)
         except Exception as exc:
             print(f"[webhooks] Erreur : {exc}", flush=True)
         return Response(status=200)
