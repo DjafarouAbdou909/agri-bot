@@ -50,7 +50,10 @@ def generate_text_response(
         return content.strip()
 
     except Exception as exc:
-        print(f"[nlp.engine] Échec génération réponse texte : {exc}")
+        # flush=True : ce code tourne dans un worker Celery, sans flush
+        # explicite le message peut rester bufferisé et ne jamais
+        # apparaître dans les logs (Render, Docker, etc.)
+        print(f"[nlp.engine] Échec génération réponse texte : {exc}", flush=True)
         return (
             "Désolé, je n'ai pas pu traiter ta question pour le moment. "
             "Réessaie dans un instant 🙏"
