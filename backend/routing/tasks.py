@@ -33,7 +33,11 @@ def process_incoming_message(phone_number: str, message: dict):
     if created:
         welcome_text = build_welcome_message(farmer)
         send_whatsapp_message(phone_number, welcome_text)
-        log_interaction(farmer, "text", welcome_text, raw_content="[bienvenue automatique]")
+        # message_type="system" : n'est PAS un vrai échange avec l'agriculteur,
+        # donc exclu de get_recent_conversation() (qui ne lit que text/audio).
+        # Sinon Groq recevrait un faux tour "user: [bienvenue automatique]"
+        # dans son historique, ce qui pollue le contexte de la conversation.
+        log_interaction(farmer, "system", welcome_text, raw_content="[bienvenue automatique]")
 
     msg_type = get_message_type(message)
     raw_content = ""
@@ -49,7 +53,8 @@ def process_incoming_message(phone_number: str, message: dict):
         if city_just_set and not had_region_before:
             confirmation = build_city_confirmation_message(farmer)
             send_whatsapp_message(phone_number, confirmation)
-            log_interaction(farmer, "text", confirmation, raw_content="[confirmation ville]")
+            # idem : message système, pas un vrai tour de conversation user/assistant
+            log_interaction(farmer, "system", confirmation, raw_content="[confirmation ville]")
 
         history = get_recent_conversation(farmer)
         response = generate_text_response(user_text, farmer, conversation_history=history)
@@ -76,7 +81,7 @@ def process_incoming_message(phone_number: str, message: dict):
             if city_just_set and not had_region_before:
                 confirmation = build_city_confirmation_message(farmer)
                 send_whatsapp_message(phone_number, confirmation)
-                log_interaction(farmer, "text", confirmation, raw_content="[confirmation ville]")
+                log_interaction(farmer, "system", confirmation, raw_content="[confirmation ville]")
 
             history = get_recent_conversation(farmer)
             response = generate_text_response(user_text, farmer, conversation_history=history)
