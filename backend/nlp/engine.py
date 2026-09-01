@@ -35,9 +35,19 @@ def generate_text_response(
             model="qwen/qwen3.6-27b",
             max_tokens=300,
             messages=messages,
+            # qwen3.6-27b est un modèle de raisonnement : sans ce paramètre,
+            # Groq renvoie le raisonnement interne brut dans le contenu,
+            # entouré de balises <think>...</think>, souvent en anglais.
+            # "hidden" garantit qu'on ne récupère que la réponse finale.
+            reasoning_format="hidden",
+            # Mode dialogue général (pas besoin de raisonnement profond pour
+            # du conseil agricole conversationnel) : réponses plus rapides
+            # et plus naturelles, cohérent avec le format WhatsApp attendu.
+            reasoning_effort="none",
         )
 
-        return response.choices[0].message.content
+        content = response.choices[0].message.content or ""
+        return content.strip()
 
     except Exception as exc:
         print(f"[nlp.engine] Échec génération réponse texte : {exc}")
