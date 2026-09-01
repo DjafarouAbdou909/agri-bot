@@ -75,15 +75,28 @@ def log_interaction(
 
 
 def get_recent_conversation(farmer: Farmer, limit: int = CONVERSATION_HISTORY_LIMIT) -> list[dict]:
+    # On inclut désormais "image" : sinon un diagnostic de plante (photo)
+    # disparaît de l'historique, et le bot "oublie" ce qu'il vient de
+    # diagnostiquer dès que l'agriculteur pose une question de suivi en texte
+    # (ex: "comment remédier à cela ?").
     recent_interactions = (
         Interaction.objects
-        .filter(farmer=farmer, message_type__in=["text", "audio"])
-        .exclude(raw_content="")
+        .filter(farmer=farmer, message_type__in=["text", "audio", "image"])
+        .exclude(response="")
         .order_by("-created_at")[:limit]
     )
     history = []
     for interaction in reversed(list(recent_interactions)):
-        history.append({"role": "user", "content": interaction.raw_content})
+        if interaction.message_type == "image":
+            # raw_content est vide pour les images (voir routing/tasks.py) :
+            # on met un texte de substitution pour que le tour "user" reste
+            # cohérent dans l'historique envoyé au modèle.
+            user_content = "[a envoyé une photo de plante pour diagnostic]"
+        else:
+            if not interaction.raw_content:
+                continue
+            user_content = interaction.raw_content
+        history.append({"role": "user", "content": user_content})
         history.append({"role": "assistant", "content": interaction.response})
     return history
 
