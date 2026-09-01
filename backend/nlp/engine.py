@@ -1,27 +1,16 @@
 import re
 
-from groq import Groq
+import requests
 from django.conf import settings
 
 from .prompts import SYSTEM_PROMPT_TEMPLATE
 
-_client = None
+GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# Nettoie le raisonnement interne que certains modèles (dont qwen/qwen3.6-27b)
-# renvoient dans le contenu, entouré de balises <think>...</think>, quand le
-# paramètre reasoning_format n'est pas disponible côté SDK.
+# Filet de sécurité : si jamais un <think> apparaît quand même dans le
+# contenu (ex: comportement futur de l'API), on le retire.
 _THINK_TAG_CLOSED_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
-# Sécurité : si la génération est tronquée avant la balise fermante (ex:
-# max_tokens trop bas), on retire quand même tout ce qui suit <think>,
-# plutôt que de renvoyer du raisonnement brut et coupé à l'utilisateur.
 _THINK_TAG_UNCLOSED_RE = re.compile(r"<think>.*", re.DOTALL | re.IGNORECASE)
-
-
-def _get_client() -> Groq:
-    global _client
-    if _client is None:
-        _client = Groq(api_key=settings.GROQ_API_KEY)
-    return _client
 
 
 def _strip_reasoning(text: str) -> str:
@@ -47,28 +36,39 @@ def generate_text_response(
 
     messages.append({"role": "user", "content": user_text})
 
-    try:
-        response = _get_client().chat.completions.create(
-            model="qwen/qwen3.6-27b",
-            # qwen3.6-27b est un modèle de raisonnement : il consomme une
-            # partie du budget de tokens pour son <think> interne avant
-            # même de commencer la réponse finale. 300 était trop bas et
-            # coupait la génération en plein raisonnement (pas de réponse
-            # utile du tout). On laisse largement de la marge ici.
-            max_tokens=1024,
-            messages=messages,
-        )
+    payload = {
+        "model": "qwen/qwen3.6-27b",
+        "max_tokens": 500,
+        "messages": messages,
+        # Appel HTTP direct (plutôt que via le SDK groq) car le SDK installé
+        # ici est trop ancien et rejette ce paramètre ("unexpected keyword
+        # argument"). L'API REST, elle, l'accepte très bien.
+        # reasoning_effort="none" désactive complètement le mode raisonnement
+        # de qwen3.6-27b : plus de <think>, plus de budget de tokens englouti
+        # par un raisonnement de longueur imprévisible avant la réponse finale.
+        "reasoning_effort": "none",
+    }
 
-        content = response.choices[0].message.content or ""
+    try:
+        response = requests.post(
+            GROQ_CHAT_COMPLETIONS_URL,
+            headers={
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=20,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        content = data["choices"][0]["message"]["content"] or ""
         cleaned = _strip_reasoning(content)
 
         if not cleaned:
-            # Le raisonnement a mangé tout le budget de tokens malgré tout :
-            # pas de réponse finale exploitable, on retombe sur le message
-            # de secours plutôt que d'envoyer une chaîne vide.
             print(
-                "[nlp.engine] Réponse vide après nettoyage du raisonnement "
-                "(probable troncature) — fallback utilisé.",
+                "[nlp.engine] Réponse vide après nettoyage (contenu inattendu) "
+                f"— payload brut : {data}",
                 flush=True,
             )
             return (
