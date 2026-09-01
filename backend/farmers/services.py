@@ -2,6 +2,8 @@
 Services métier liés aux agriculteurs.
 Toute logique de lecture/écriture sur Farmer et Interaction passe par ici.
 """
+import re
+
 from .models import Farmer, Interaction
 
 KNOWN_CROPS = [
@@ -33,6 +35,18 @@ SUGGESTED_CITIES = [
 CONVERSATION_HISTORY_LIMIT = 6
 
 
+def _contains_word(text_lower: str, phrase: str) -> bool:
+    """
+    Vérifie que `phrase` apparaît comme mot/expression entière dans le texte,
+    et pas comme simple sous-chaîne à l'intérieur d'un autre mot.
+
+    Ex : "man" ne doit PAS matcher dans "comment", "demain", "maintenant",
+    "manger", "manque"... mais doit matcher dans "je vis à Man".
+    """
+    pattern = r"(?<!\w)" + re.escape(phrase) + r"(?!\w)"
+    return re.search(pattern, text_lower) is not None
+
+
 def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
     """
     Crée un agriculteur SANS région par défaut. La ville sera demandée
@@ -40,6 +54,7 @@ def get_or_create_farmer(phone_number: str) -> tuple[Farmer, bool]:
     """
     farmer, created = Farmer.objects.get_or_create(phone_number=phone_number)
     return farmer, created
+
 
 def log_interaction(
     farmer: Farmer,
@@ -58,6 +73,7 @@ def log_interaction(
         media_url=media_url,
     )
 
+
 def get_recent_conversation(farmer: Farmer, limit: int = CONVERSATION_HISTORY_LIMIT) -> list[dict]:
     recent_interactions = (
         Interaction.objects
@@ -75,7 +91,7 @@ def get_recent_conversation(farmer: Farmer, limit: int = CONVERSATION_HISTORY_LI
 def try_update_crop_from_text(farmer: Farmer, user_text: str) -> bool:
     text_lower = user_text.lower()
     for crop in KNOWN_CROPS:
-        if crop in text_lower:
+        if _contains_word(text_lower, crop):
             normalized_crop = "maïs" if crop == "mais" else crop
             farmer.crop = normalized_crop
             farmer.save(update_fields=["crop", "updated_at"])
@@ -96,7 +112,7 @@ def try_update_region_from_text(farmer: Farmer, user_text: str) -> bool:
         "Tiassale": "Tiassalé",
     }
     for city in KNOWN_CITIES:
-        if city in text_lower:
+        if _contains_word(text_lower, city):
             base = city.title()
             final_city = normalized_map.get(base, base)
             farmer.region = final_city
