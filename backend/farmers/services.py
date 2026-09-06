@@ -25,8 +25,7 @@ KNOWN_CITIES = [
     "ferkessedougou", "bingerville", "adzopé", "adzope", "sinfra",
 ]
 
-# Villes mises en avant dans le message de bienvenue (les plus connues/
-# reconnaissables, pour ne pas noyer l'agriculteur sous 30 options)
+# Villes mises en avant dans le message de bienvenue 
 SUGGESTED_CITIES = [
     "Abidjan", "Bouaké", "Yamoussoukro", "San-Pédro",
     "Korhogo", "Daloa", "Man", "Gagnoa",
@@ -122,7 +121,7 @@ def try_update_region_from_text(farmer: Farmer, user_text: str) -> bool:
         "Bouake": "Bouaké", "San Pedro": "San-Pédro", "Seguela": "Séguéla",
         "Odienne": "Odienné", "Ferkessedougou": "Ferkessédougou",
         "Adzope": "Adzopé", "Soubre": "Soubré", "Grand Bassam": "Grand-Bassam",
-        "Tiassale": "Tiassalé",
+        "Tiassale": "Tiassalé", "Gagnoa":"Gagnoa","Oume": "Oume",
     }
     for city in KNOWN_CITIES:
         if _contains_word(text_lower, city):

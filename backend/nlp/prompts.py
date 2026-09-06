@@ -34,3 +34,4 @@ Si l'image n'est vraiment pas une plante du tout, dis-le clairement et n'invente
 
 Culture déclarée par l'agriculteur : {crop}
 """
+
