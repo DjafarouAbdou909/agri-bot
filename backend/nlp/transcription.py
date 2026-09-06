@@ -35,7 +35,7 @@ def transcribe_audio(media_id: str) -> str | None:
         return None
 
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-3.6-flash")
         response = model.generate_content([
             "Transcris cet audio en français. Renvoie uniquement le texte transcrit, sans commentaire. "
             "Si l'audio est silencieux, vide, ou incomprehensible, réponds exactement: INAUDIBLE",
